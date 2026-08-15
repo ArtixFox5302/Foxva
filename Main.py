@@ -1,48 +1,23 @@
-import json
-import os
-import shutil
-from pathlib import Path
+import os.path
 
 
-class Mod:
-    def __init__(self, mod_name, mod_version="1.0.0"):
-        self.Mod_Name = mod_name
-        self.Mod_Version = mod_version
-        self.Blocks = []
-        self.Items = []
-
-    def block(self, hardness:int, resistance:int, needed_tool, sound:os.PathLike, texture:os.PathLike, glow:int, block_name:str):
-        self.Blocks.append({"hardness":hardness,"resistance": resistance,"needed_tool": needed_tool,"sound": sound,"texture": texture,"glow": glow,"block_name": block_name})
-        pass
-
-    def item(self, item_texture:os.PathLike, item_id:str):
-        self.Items.append({"item_texture":item_texture, "item_id":item_id})
-        pass
+class Foxva:
+    def __init__(self, version, name):
+        self.version = version
+        self.name = name
 
     def build(self):
-        template_name = f"{self.Mod_Name} {self.Mod_Version}"
-        mod_name = self.Mod_Name
-
-        script_dir = Path(__file__).resolve().parent
-        parent_dir = script_dir.parent
-        builds_folder = parent_dir / "Builds"
-
-        source_template = "Foxva/template-folder"
-        new_template = builds_folder / template_name
-
-        shutil.copytree(source_template,new_template)
-
-        mod_conf = new_template / "src" / "main" / "resources" / "fabric.mod.json"
-
-        with open(mod_conf, "r") as file:
-            data = json.load(file)
-
-        mod_name_lower = mod_name.lower()
-        mod_name_upper = mod_name.upper()
-
-        data["id"] = mod_name_lower
-        data["name"] = mod_name_upper
-        data["version"] = self.Mod_Version
-
-        with open(mod_conf, "w") as file:
-            json.dump(data, file, indent=4)
+        builds_folder = os.path.expanduser('~/Documents/FoxvaBuilds')
+        if os.path.isdir(builds_folder):
+            print("User has a builds folder")
+        else:
+            os.mkdir(builds_folder)
+            print("Made builds folder")
+        print("Moving onto templates")
+        templates_folder = os.path.expanduser('~/Documents/FoxvaTemplates')
+        if os.path.isdir(templates_folder):
+            print("User has a templates folder. If it is just the folder and not the actual templates script will fail later.")
+        else:
+            print("User doesn't have templates put in. Foxva has created a folder go to the Github and put in the templates from the Foxva templates folder inside of the Github repository.")
+            os.mkdir(templates_folder)
+            exit()

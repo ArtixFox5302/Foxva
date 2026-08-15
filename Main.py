@@ -2,7 +2,7 @@ import os.path
 
 
 class Foxva:
-    def __init__(self, minecraft_version, name):
+    def __init__(self, minecraft_version:str, name:str):
         self.minecraft_version = minecraft_version
         self.name = name
         self.blocks = {}
@@ -15,7 +15,7 @@ class Foxva:
 
 
     def build(self):
-        available_minecraft_versions = [26.2]
+        available_minecraft_versions = ["26.2"]
         for x in available_minecraft_versions:
             if x == self.minecraft_version:
                 print("Selected Minecraft version has an available template")
@@ -41,5 +41,13 @@ class Foxva:
             print("User doesn't have templates put in. Foxva has created a folder go to the Github and put in the templates from the Foxva templates folder inside of the Github repository.")
             os.mkdir(templates_folder)
             exit()
+        blocks_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/src/main/java/com/artix/learning/block/ModBlocks.java')
+        with open(blocks_file, 'r') as file:
+            mod_blocks_file = file.read()
 
-        
+        for name, details in self.blocks.items():
+            strength = details["strength"]
+            sound = details["sound"]
+            register_block_format = f'public static final Block {name.upper()} = registerBlock("{name.lower()}", properties -> new Block(properties.strength({strength}f).requiresCorrectToolForDrops().sound(SoundType.{sound})));'
+            mod_blocks_file = mod_blocks_file.replace("    //FoxvaBlockMarker", f"    //FoxvaBlockMarker\n    {register_block_format}")
+            print(mod_blocks_file)

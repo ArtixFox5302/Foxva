@@ -5,6 +5,7 @@ import random
 import shutil
 
 import sys
+from os import mkdir
 from time import strftime
 
 from PIL import Image
@@ -51,10 +52,6 @@ class Foxva:
         def verbose(message):
             if "-v" in self.flags:
                 print(message)
-
-        def source_folder():
-            if "-s" in self.flags:
-                print("Keeping source folder")
 
         available_minecraft_versions = ["26.2"]
         for x in available_minecraft_versions:
@@ -218,9 +215,22 @@ class Foxva:
         verbose("Creating final build folder")
         time = strftime("%Y-%m-%d %H-%M-%S")
 
-        final_build = os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}')
-        shutil.copytree(des, final_build)
+        build_result = subprocess.run(["./gradlew", "build"], cwd=des, capture_output=True, text=True)
+        if build_result.returncode != 0:
+            print(f"Build failed: {result.stderr}")
+            shutil.rmtree(des)
+            sys.exit()
+        build_location = os.path.expanduser("~/Documents/FoxvaTemplates/utils/template_copy/build/libs/26_2-template-1.0.0.jar")
 
-        shutil.rmtree(des)
+        if "-s" in self.flags:
+            mkdir(os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}'))
+            final_build = os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/source')
+            shutil.copytree(des, final_build)
+            shutil.copyfile(build_location, os.path.expanduser(f"~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/26_2-template-1.0.0.jar"))
+            shutil.rmtree(des)
+        else:
+            mkdir(os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}'))
+            shutil.copyfile(build_location, os.path.expanduser(f"~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/26_2-template-1.0.0.jar"))
+            shutil.rmtree(des)
 
         print("Foxva Build successful")

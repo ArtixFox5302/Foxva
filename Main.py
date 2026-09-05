@@ -1,4 +1,5 @@
 import subprocess
+import threading
 from datetime import datetime
 import os.path
 import random
@@ -50,8 +51,21 @@ class Foxva:
                 return False
 
         def verbose(message):
-            if "-v" in self.flags:
+            if "v" in self.flags:
                 print(message)
+        x = 0
+        def b():
+            import time
+            bagels = 0
+            while x != 1:
+                bagels += 1
+                print("BAGEL")
+                time.sleep(0.0005)
+            print(f"You ate {bagels} bagels while this code ran")
+
+        b_thread = threading.Thread(target=b, daemon=True)
+        if "b" in self.flags:
+            b_thread.start()
 
         available_minecraft_versions = ["26.2"]
         for x in available_minecraft_versions:
@@ -88,10 +102,7 @@ class Foxva:
         for name, details in self.blocks.items():
             strength = details["strength"]
             sound = details["sound"]
-            register_block_format = f'public static final Block {name.upper()} = registerBlock("{name.lower()}", properties -> new Block(properties.strength({strength}f).requiresCorrectToolForDrops().sound(SoundType.{sound})));'
-            mod_blocks_file = mod_blocks_file.replace("    //FoxvaBlockMarker", f"    //FoxvaBlockMarker\n    {register_block_format}")
-            language_format = f'"item.template_26_2.{name.lower()}"'
-            print(mod_blocks_file)
+
         verbose("Finding template language file")
         language_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/src/main/resources/assets/template_26_2/lang/en_us.json')
         verbose("Finding template item file")
@@ -190,6 +201,7 @@ class Foxva:
             f.write(data_gen)
         verbose("Files written to")
         print("Building DataGen this may take a minute")
+        os.chmod(os.path.join(des, "gradlew"), 0o755)
         result = subprocess.run(["./gradlew", "runDatagen"], cwd=des, capture_output=True, text=True)
         print(result.stdout)
         if result.returncode != 0:
@@ -222,7 +234,7 @@ class Foxva:
             sys.exit()
         build_location = os.path.expanduser("~/Documents/FoxvaTemplates/utils/template_copy/build/libs/26_2-template-1.0.0.jar")
 
-        if "-s" in self.flags:
+        if "s" in self.flags:
             mkdir(os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}'))
             final_build = os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/source')
             shutil.copytree(des, final_build)
@@ -232,5 +244,7 @@ class Foxva:
             mkdir(os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}'))
             shutil.copyfile(build_location, os.path.expanduser(f"~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/26_2-template-1.0.0.jar"))
             shutil.rmtree(des)
-
+        x = 1
+        import time
+        time.sleep(0.0005)
         print("Foxva Build successful")

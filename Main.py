@@ -4,13 +4,11 @@ from datetime import datetime
 import os.path
 import random
 import shutil
-
 import sys
 from os import mkdir
 from time import strftime
-
 from PIL import Image
-
+import platform
 
 class Foxva:
     def __init__(self, minecraft_version:str, name:str, flags:str = ""):
@@ -202,7 +200,14 @@ class Foxva:
         verbose("Files written to")
         print("Building DataGen this may take a minute")
         os.chmod(os.path.join(des, "gradlew"), 0o755)
-        result = subprocess.run(["./gradlew", "runDatagen"], cwd=des, capture_output=True, text=True)
+        if platform.system() == "Linux":
+            result = subprocess.run(["./gradlew", "runDatagen"], cwd=des, capture_output=True, text=True)
+        elif platform.system() == "Windows":
+            result = subprocess.run(["gradlew.bat", "runDatagen"], cwd=des, capture_output=True, text=True, shell=True)
+        else:
+            print("Well Fuck")
+            sys.exit()
+            
         print(result.stdout)
         if result.returncode != 0:
             print(f"Datagen failed: {result.stderr}")
@@ -227,10 +232,20 @@ class Foxva:
         verbose("Creating final build folder")
         time = strftime("%Y-%m-%d %H-%M-%S")
 
-        build_result = subprocess.run(["./gradlew", "build"], cwd=des, capture_output=True, text=True)
-        if build_result.returncode != 0:
-            print(f"Build failed: {result.stderr}")
-            shutil.rmtree(des)
+        def return_code(build_res):
+            if build_res.returncode != 0:
+                print(f"Build failed: {build_res.stderr}")
+                shutil.rmtree(des)
+                sys.exit()
+
+        if platform.system() == "Linux":
+            build_result = subprocess.run(["./gradlew", "build"], cwd=des, capture_output=True, text=True)
+            return_code(build_result)
+        elif platform.system() == "Windows":
+            build_result = subprocess.run(["gradlew.bat", "build"], cwd=des, capture_output=True, text=True, shell=True)
+            return_code(build_result)
+        else:
+            print("Well Fuck")
             sys.exit()
         build_location = os.path.expanduser("~/Documents/FoxvaTemplates/utils/template_copy/build/libs/26_2-template-1.0.0.jar")
 

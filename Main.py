@@ -1,8 +1,6 @@
 import subprocess
 import threading
-from datetime import datetime
 import os.path
-import random
 import shutil
 import sys
 from os import mkdir
@@ -89,10 +87,25 @@ class Foxva:
                 print("User doesn't have the correct template")
                 sys.exit()
         else:
-            print("User doesn't have templates put in. Foxva has created a folder go to the Github and put in the templates from the Foxva templates folder inside of the Github repository.")
+            print("User doesn't have templates put in. Foxva has created a folder; go to the Github and go to the Google Drive to download the template you need.")
             os.mkdir(templates_folder)
             os.mkdir(templates_utils_folder)
             sys.exit()
+
+        gradle_wrapper_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle/wrapper/gradle-wrapper.properties.txt')
+        gradle_properties_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle.properties.txt')
+        print("Checking for file name mismatches")
+        if os.path.isfile(gradle_wrapper_file):
+            print("Fixing file name mismatch")
+            old_file_wrapper = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle/wrapper/gradle-wrapper.properties.txt')
+            new_file_wrapper = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle/wrapper/gradle-wrapper.properties')
+            os.rename(old_file_wrapper, new_file_wrapper)
+        if os.path.isfile(gradle_properties_file):
+            print("Fixing file name mismatch")
+            old_file_properties = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle.properties.txt')
+            new_file_properties = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle.properties')
+            os.rename(old_file_properties,new_file_properties)
+
         blocks_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/src/main/java/net/foxva/template/block/ModBlocks.java')
         with open(blocks_file, 'r') as file:
             mod_blocks_file = file.read()

@@ -236,7 +236,12 @@ class Foxva:
         verbose("Placing texture")
         for food_name, details in self.foods.items():
             texture = details["texture"]
-            texture_des = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item/{food_name.lower()}.png')
+            suffix = texture.suffix
+            if not suffix == ".png":
+                print("Not a valid image format, please use png")
+                sys.exit()
+                
+            texture_des = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item/{food_name.lower()}{suffix}')
             if is_image(texture):
                 shutil.copyfile(texture, texture_des)
             else:

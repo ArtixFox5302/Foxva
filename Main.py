@@ -23,11 +23,11 @@ class Foxva:
             "sound": sound
         }
 
-    def item(self, item_name:str, texture:os.PathLike):
+    def item(self, item_name:str, texture:os.PathLike | str):
         self.items.append(item_name)
         self.texture = texture
 
-    def food(self, food_name:str, nutrition:float, saturation:float, consume_time:float, texture:os.PathLike):
+    def food(self, food_name:str, nutrition:float, saturation:float, consume_time:float, texture:os.PathLike | str):
         self.foods[food_name] = {
             "nutrition": nutrition,
             "saturation": saturation,
@@ -220,7 +220,7 @@ class Foxva:
         else:
             print("Well Fuck")
             sys.exit()
-            
+
         print(result.stdout)
         if result.returncode != 0:
             print(f"Datagen failed: {result.stderr}")

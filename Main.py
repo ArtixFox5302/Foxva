@@ -7,25 +7,26 @@ from os import mkdir
 from time import strftime
 from PIL import Image
 import platform
-
 class Foxva:
     def __init__(self, minecraft_version:str, name:str, flags:str = ""):
         self.minecraft_version = minecraft_version
         self.name = name
         self.flags = flags
         self.blocks = {}
-        self.items = []
+        self.items = {}
         self.foods = {}
 
-    def block(self, block_name:str, strength:int, sound:str):
+    def block(self, block_name:str, strength:int, sound:str, texture:os.PathLike | str):
         self.blocks[block_name] = {
             "strength": strength,
-            "sound": sound
+            "sound": sound,
+            "texture": texture
         }
 
     def item(self, item_name:str, texture:os.PathLike | str):
-        self.items.append(item_name)
-        self.texture = texture
+        self.items[item_name] = {
+            "texture": texture
+        }
 
     def food(self, food_name:str, nutrition:float, saturation:float, consume_time:float, texture:os.PathLike | str):
         self.foods[food_name] = {
@@ -38,17 +39,14 @@ class Foxva:
     def build(self):
         lang_entries = []
 
-        def is_image(givenFile):
+        def is_image(given_file):
             try:
-                with Image.open(givenFile) as img:
+                with Image.open(given_file) as img:
                     img.verify()
                     return True
             except (IOError, SyntaxError):
                 return False
 
-        def verbose(message):
-            if "v" in self.flags:
-                print(message)
         x = 0
         def b():
             import time
@@ -59,6 +57,14 @@ class Foxva:
                 time.sleep(0.0005)
             print(f"You ate {bagels} bagels while this code ran")
 
+        des = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy')
+        def shit(error):
+            if os.path.isdir(des):
+                shutil.rmtree(des)
+
+            print(f"The following error has occurred: {error}")
+            sys.exit()
+
         b_thread = threading.Thread(target=b, daemon=True)
         if "b" in self.flags:
             b_thread.start()
@@ -68,8 +74,7 @@ class Foxva:
             if x == self.minecraft_version:
                 print("Selected Minecraft version has an available template")
             else:
-                print("Foxva doesn't support the selected Minecraft version yet")
-                sys.exit()
+                shit("Invalid Minecraft version")
         builds_folder = os.path.expanduser('~/Documents/FoxvaBuilds')
         if os.path.isdir(builds_folder):
             print("User has a builds folder")
@@ -85,16 +90,17 @@ class Foxva:
                 print("User has the correct template")
             else:
                 print("User doesn't have the correct template")
-                sys.exit()
+                shit("Incorrect template")
         else:
-            print("User doesn't have templates put in. Foxva has created a folder; go to the Github and go to the Google Drive to download the template you need.")
             os.mkdir(templates_folder)
             os.mkdir(templates_utils_folder)
-            sys.exit()
+            shit("User does not have the correct template")
 
         gradle_wrapper_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle/wrapper/gradle-wrapper.properties.txt')
         gradle_properties_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle.properties.txt')
-        print("Checking for file name mismatches")
+        item_folder = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item')
+        block_folder = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/block')
+        print("Running template checks")
         if os.path.isfile(gradle_wrapper_file):
             print("Fixing file name mismatch")
             old_file_wrapper = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle/wrapper/gradle-wrapper.properties.txt')
@@ -107,98 +113,86 @@ class Foxva:
             os.rename(old_file_properties,new_file_properties)
 
         blocks_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/src/main/java/net/foxva/template/block/ModBlocks.java')
-        with open(blocks_file, 'r') as file:
-            mod_blocks_file = file.read()
-
-        for name, details in self.blocks.items():
-            strength = details["strength"]
-            sound = details["sound"]
-
-        verbose("Finding template language file")
         language_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/src/main/resources/assets/template_26_2/lang/en_us.json')
-        verbose("Finding template item file")
         items_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/src/main/java/net/foxva/template/item/ModItems.java')
-        verbose("Finding template food file")
         foods_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/src/main/java/net/foxva/template/food/ModFoods.java')
-        verbose("Finding template data generation file")
         data_gen_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/src/main/java/net/foxva/template/datagen/ModModelProvider.java')
-        verbose("Opening items file")
         with open(items_file, 'r') as file:
             mod_items_file = file.read()
-        verbose("Opening food file")
         with open(foods_file, 'r') as f:
             mod_food_file = f.read()
-        verbose("Opening language file")
+        with open(blocks_file, 'r') as file:
+            mod_blocks_file = file.read()
         with open(language_file, 'r') as f:
             mod_language_file = f.read()
-        verbose("Opening data generation file")
         with open(data_gen_file, 'r') as f:
             data_gen = f.read()
 
-        verbose("Starting items")
-        for x in self.items:
-            verbose("Making formats")
-            register_item_format = f'public static final Item {x.upper()} = registerItem("{x.lower()}", Item::new);'
-            output_accept = f"output.accept({x.upper()});"
-            language_format = f'"item.template_26_2.{x.lower()}": "{x}"'
-            data_gen_format = f'itemModelGenerators.generateFlatItem(ModItems.{x.upper()}, ModelTemplates.FLAT_ITEM);'
-            verbose("Developing data generation file")
-            data_gen = data_gen.replace("        //FoxvaDatagenMarker", f"        //FoxvaDatagenMarker\n        {data_gen_format}")
-            verbose("Developing item file")
-            mod_items_file = mod_items_file.replace("   //FoxvaMarker Item", f"   //FoxvaMarker Item\n    {register_item_format}")
-            mod_items_file = mod_items_file.replace("   //FoxvaMarker.accept", f"    //FoxvaMarker.accept\n            {output_accept}")
-            verbose("Developing language file")
+        for item_name, details in self.items.items():
+            new_name = item_name.replace(" ", "_")
+            register_item_format = f'public static final Item {new_name.upper()} = registerItem("{new_name.lower()}", Item::new);'
+            output_accept = f"output.accept({new_name.upper()});"
+            language_format = f'"item.template_26_2.{new_name.lower()}": "{item_name}"'
+            data_gen_format = f'itemModelGenerators.generateFlatItem(ModItems.{new_name.upper()}, ModelTemplates.FLAT_ITEM);'
+            data_gen = data_gen.replace("        //FoxvaDatagenMarkerItem",f"        //FoxvaDatagenMarkerItem\n        {data_gen_format}")
+            mod_items_file = mod_items_file.replace("    //FoxvaMarkerItem",f"    //FoxvaMarkerItem\n    {register_item_format}")
+            mod_items_file = mod_items_file.replace("   //FoxvaMarker.accept",f"    //FoxvaMarker.accept\n            {output_accept}")
             lang_entries.append(language_format)
-        verbose("Finished item development")
-        verbose("Starting food")
+
 
         for food_name, details in self.foods.items():
-            verbose("Getting food details")
             nutrition = details["nutrition"]
             saturation = details["saturation"]
             consume_time = details["consume_time"]
-            if isinstance(nutrition, float):
-                nutrition = f"{nutrition}f"
             if isinstance(saturation, float):
                 saturation = f"{saturation}f"
             if isinstance(consume_time, float):
                 consume_time = f"{consume_time}f"
-            verbose("Making formats")
-            food_properties_format = f'public static final FoodProperties {food_name.upper()} = new FoodProperties.Builder().nutrition({nutrition}).saturationModifier({saturation}).build();'
-            food_consumable_format = f'public static final Consumable {food_name.upper()}_CONSUMABLE = Consumables.defaultFood().consumeSeconds({consume_time}).build();'
-            add_item_format = f'public static final Item {food_name.upper()} = registerItem("{food_name.lower()}", properties -> new Item(properties.food(ModFoods.{food_name.upper()}, ModFoods.{food_name.upper()}_CONSUMABLE)));'
-            add_lang_format = f'"item.template_26_2.{food_name.lower()}": "{food_name}"'
-            item_accept_format = f'output.accept({food_name.upper()});'
-            data_gen_format = f'itemModelGenerators.generateFlatItem(ModItems.{food_name.upper()}, ModelTemplates.FLAT_ITEM);'
-            data_gen = data_gen.replace("        //FoxvaDatagenMarker",f"        //FoxvaDatagenMarker\n        {data_gen_format}")
-            verbose("Developing language file")
+            new_name = food_name.replace(" ", "_")
+            food_properties_format = f'public static final FoodProperties {new_name.upper()} = new FoodProperties.Builder().nutrition({nutrition}).saturationModifier({saturation}).build();'
+            food_consumable_format = f'public static final Consumable {new_name.upper()}_CONSUMABLE = Consumables.defaultFood().consumeSeconds({consume_time}).build();'
+            add_item_format = f'public static final Item {new_name.upper()} = registerItem("{new_name.lower()}", properties -> new Item(properties.food(ModFoods.{new_name.upper()}, ModFoods.{new_name.upper()}_CONSUMABLE)));'
+            add_lang_format = f'"item.template_26_2.{new_name.lower()}": "{food_name}"'
+            item_accept_format = f'output.accept({new_name.upper()});'
+            data_gen_format = f'itemModelGenerators.generateFlatItem(ModItems.{new_name.upper()}, ModelTemplates.FLAT_ITEM);'
+            data_gen = data_gen.replace("        //FoxvaDatagenMarkerItem",f"        //FoxvaDatagenMarkerItem\n        {data_gen_format}")
             lang_entries.append(add_lang_format)
-            verbose("Developing item file")
-            mod_items_file = mod_items_file.replace("   //FoxvaMarker Item", f"   //FoxvaMarker Item\n    {add_item_format}")
+            mod_items_file = mod_items_file.replace("    //FoxvaMarkerItem", f"    //FoxvaMarkerItem\n    {add_item_format}")
             mod_items_file = mod_items_file.replace("             //FoxvaMarker.accept", f"             //FoxvaMarker.accept\n            {item_accept_format}")
-            verbose("Developing food file")
             mod_food_file = mod_food_file.replace("    //FoxvaFoodPropertiesMarker", f"    //FoxvaFoodPropertiesMarker\n    {food_properties_format}")
             mod_food_file = mod_food_file.replace("    //FoxvaFoodConsumablesMarker",f"    //FoxvaFoodConsumablesMarker\n    {food_consumable_format}")
-        verbose("Finished food development")
-        verbose("Working on language file")
+
+        for block_name, details in self.blocks.items():
+            strength = details["strength"]
+            sound = details["sound"]
+            new_name = block_name.replace(" ", "_")
+            if isinstance(strength, float):
+                strength = f"{strength}f"
+            register_block_format = f'public static final Block {new_name.upper()} = registerBlock("{new_name.lower()}", properties -> new Block(properties.strength({strength}).requiresCorrectToolForDrops().sound(SoundType.{sound.upper()})));'
+            block_datagen_format = f'blockModelGenerators.createTrivialCube(ModBlocks.{new_name.upper()});'
+            block_lang_format = f'"block.template_26_2.{new_name.lower()}": "{block_name}"'
+            mod_blocks_file = mod_blocks_file.replace("    //FoxvaMarker",f"    //FoxvaMarker\n    {register_block_format}")
+            data_gen = data_gen.replace("        //FoxvaDatagenMarkerBlock",f"        //FoxvaDatagenMarkerBlock\n        {block_datagen_format}")
+            lang_entries.append(block_lang_format)
+
         if lang_entries:
             lang_block = ",\n  ".join(lang_entries)
             mod_language_file = mod_language_file.replace("  //FoxvaMarkerJson", f"  //FoxvaMarkerJson\n  {lang_block}")
-        verbose("Getting rid of markers")
         mod_language_file = mod_language_file.replace("  //FoxvaMarkerJson","")
         mod_items_file = mod_items_file.replace("    //FoxvaMarker Item","")
         mod_items_file = mod_items_file.replace("             //FoxvaMarker.accept", "")
         mod_food_file = mod_food_file.replace("    //FoxvaFoodConsumablesMarker", "")
         mod_food_file = mod_food_file.replace("    //FoxvaFoodPropertiesMarker", "")
-        data_gen = data_gen.replace("        //FoxvaDatagenMarker","")
+        mod_blocks_file = mod_blocks_file.replace("    //FoxvaMarker", "")
+        data_gen = data_gen.replace("        //FoxvaDatagenMarkerItem","")
+        data_gen = data_gen.replace("        //FoxvaDatagenMarkerBlock", "")
 
-        des = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy')
         shutil.copytree(template, des)
         new_item_file = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy/src/main/java/net/foxva/template/item/ModItems.java')
         new_food_file = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy/src/main/java/net/foxva/template/food/ModFoods.java')
+        mew_block_file = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy/src/main/java/net/foxva/template/block/ModBlocks.java')
         new_language_file = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/lang/en_us.json')
         new_data_gen = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy/src/main/java/net/foxva/template/datagen/ModModelProvider.java')
-        verbose("Starting writing to files")
         with open(new_item_file, "w") as file:
             file.write(mod_items_file)
 
@@ -208,9 +202,17 @@ class Foxva:
         with open(new_food_file, "w") as file:
             file.write(mod_food_file)
 
+        with open(mew_block_file, "w") as file:
+            file.write(mod_blocks_file)
+
         with open(new_data_gen, "w") as f:
             f.write(data_gen)
-        verbose("Files written to")
+
+        if not os.path.isdir(item_folder):
+            mkdir(item_folder)
+        if not os.path.isdir(block_folder):
+            mkdir(block_folder)
+
         print("Building DataGen this may take a minute")
         os.chmod(os.path.join(des, "gradlew"), 0o755)
         if platform.system() == "Linux":
@@ -218,43 +220,54 @@ class Foxva:
         elif platform.system() == "Windows":
             result = subprocess.run(["gradlew.bat", "runDatagen"], cwd=des, capture_output=True, text=True, shell=True)
         else:
-            print("Well Fuck")
-            sys.exit()
+            shit("MacOS is not supported yet or could not detect OS")
 
         print(result.stdout)
         if result.returncode != 0:
-            print(f"Datagen failed: {result.stderr}")
-            shutil.rmtree(des)
-            sys.exit()
+            shit(f"Data gen failed {result.stderr}")
 
-        for x in self.items:
-            item_texture_des = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item/{x.lower()}.png')
-            if not is_image(self.texture):
-                print("Not a valid image or path")
-                sys.exit()
-            shutil.copyfile(self.texture, item_texture_des)
-        verbose("Placing texture")
+        for item_name, details in self.items.items():
+            texture = details["texture"]
+            suffix = texture.suffix
+            new_name = item_name.replace(" ", "_")
+            if not suffix == ".png":
+                shit("Invalid image format, please use the PNG format")
+
+            texture_des = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item/{new_name.lower()}.png')
+            if is_image(texture):
+                shutil.copyfile(texture, texture_des)
+
         for food_name, details in self.foods.items():
             texture = details["texture"]
             suffix = texture.suffix
+            new_name = food_name.replace(" ", "_")
             if not suffix == ".png":
-                print("Not a valid image format, please use png")
-                sys.exit()
-                
-            texture_des = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item/{food_name.lower()}{suffix}')
+                shit("Invalid image format, please use the PNG format")
+
+            texture_des = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item/{new_name.lower()}.png')
             if is_image(texture):
                 shutil.copyfile(texture, texture_des)
             else:
-                print("Not a valid image")
-                sys.exit()
-        verbose("Creating final build folder")
+                shit("Invalid image")
+
+        for block_name, details in self.blocks.items():
+            texture = details["texture"]
+            suffix = texture.suffix
+            new_name = block_name.replace(" ", "_")
+            if not suffix == ".png":
+                shit(f"Invalid image format, please use the PNG format")
+
+            texture_des = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/block/{new_name.lower()}.png')
+            if is_image(texture):
+                shutil.copyfile(texture, texture_des)
+            else:
+                shit("Invalid image")
+
         time = strftime("%Y-%m-%d %H-%M-%S")
 
         def return_code(build_res):
             if build_res.returncode != 0:
-                print(f"Build failed: {build_res.stderr}")
-                shutil.rmtree(des)
-                sys.exit()
+                shit(f"Build failed: {build_res.stderr}")
 
         if platform.system() == "Linux":
             build_result = subprocess.run(["./gradlew", "build"], cwd=des, capture_output=True, text=True)
@@ -263,8 +276,7 @@ class Foxva:
             build_result = subprocess.run(["gradlew.bat", "build"], cwd=des, capture_output=True, text=True, shell=True)
             return_code(build_result)
         else:
-            print("Well Fuck")
-            sys.exit()
+            shit("MacOS is not supported yet or could not detect OS")
         build_location = os.path.expanduser("~/Documents/FoxvaTemplates/utils/template_copy/build/libs/26_2-template-1.0.0.jar")
 
         if "s" in self.flags:

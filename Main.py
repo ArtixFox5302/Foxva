@@ -4,6 +4,7 @@ import os.path
 import shutil
 import sys
 from os import mkdir
+from shutil import rmtree
 from time import strftime
 from PIL import Image
 import platform
@@ -188,6 +189,9 @@ class Foxva:
         data_gen = data_gen.replace("        //FoxvaDatagenMarkerItem","")
         data_gen = data_gen.replace("        //FoxvaDatagenMarkerBlock", "")
 
+        if os.path.isdir(des):
+            rmtree(des)
+
         shutil.copytree(template, des)
         new_item_file = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy/src/main/java/net/foxva/template/item/ModItems.java')
         new_food_file = os.path.expanduser('~/Documents/FoxvaTemplates/utils/template_copy/src/main/java/net/foxva/template/food/ModFoods.java')
@@ -280,17 +284,17 @@ class Foxva:
             return_code(build_result)
         else:
             shit("MacOS is not supported yet or could not detect OS")
-        build_location = os.path.expanduser("~/Documents/FoxvaTemplates/utils/template_copy/build/libs/26_2-template-1.0.0.jar")
+        build_location = os.path.expanduser("~/Documents/FoxvaTemplates/utils/template_copy/build/libs/template_26_2-1.0.0.jar")
 
         if "s" in self.flags:
             mkdir(os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}'))
             final_build = os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/source')
             shutil.copytree(des, final_build)
-            shutil.copyfile(build_location, os.path.expanduser(f"~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/26_2-template-1.0.0.jar"))
+            shutil.copyfile(build_location, os.path.expanduser(f"~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/template_26_2-1.0.0.jar"))
             shutil.rmtree(des)
         else:
             mkdir(os.path.expanduser(f'~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}'))
-            shutil.copyfile(build_location, os.path.expanduser(f"~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/26_2-template-1.0.0.jar"))
+            shutil.copyfile(build_location, os.path.expanduser(f"~/Documents/FoxvaBuilds/{self.name}_{self.minecraft_version}_{time}/template_26_2-1.0.0.jar"))
             shutil.rmtree(des)
         x = 1
         import time

@@ -98,6 +98,7 @@ class Foxva:
 
         gradle_wrapper_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle/wrapper/gradle-wrapper.properties.txt')
         gradle_properties_file = os.path.expanduser(f'~/Documents/FoxvaTemplates/{self.minecraft_version}/gradle.properties.txt')
+        texture_folder = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item')
         item_folder = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/item')
         block_folder = os.path.expanduser(f'~/Documents/FoxvaTemplates/utils/template_copy/src/main/resources/assets/template_26_2/textures/block')
         print("Running template checks")
@@ -208,6 +209,8 @@ class Foxva:
         with open(new_data_gen, "w") as f:
             f.write(data_gen)
 
+        if not os.path.isdir(texture_folder):
+            mkdir(texture_folder)
         if not os.path.isdir(item_folder):
             mkdir(item_folder)
         if not os.path.isdir(block_folder):
